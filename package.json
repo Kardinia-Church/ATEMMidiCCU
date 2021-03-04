@@ -1,0 +1,33 @@
+{
+  "name": "atemmidiccu",
+  "version": "1.0.0",
+  "description": "A nodejs project to use a Behringer xTouch Extender for a BlackMagic switcher CCU",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kardinia-Church/ATEMMidiCCU.git"
+  },
+  "keywords": [
+    "atem",
+    "midi",
+    "ccu",
+    "blackmagic",
+    "behringer",
+    "xtouch",
+    "extender"
+  ],
+  "author": "Karidnia Church",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/Kardinia-Church/ATEMMidiCCU/issues"
+  },
+  "homepage": "https://github.com/Kardinia-Church/ATEMMidiCCU#readme",
+  "dependencies": {
+    "atem-connection": "2.1.0",
+    "midi": "1.0.0",
+    "nconf": "0.11.2"
+  }
+}
