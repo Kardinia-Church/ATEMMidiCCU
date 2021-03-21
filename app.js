@@ -31,6 +31,9 @@ var lcdColors = {
     "cyan": 6,
     "white": 7
 };
+var selectedCamera = 1;
+var ccuAux = 1;
+var me = 0;
 
 //Start flashing the keys to show connection issues
 function flashKeys() {
@@ -106,6 +109,8 @@ function connect() {
         console.log("Successfully connected to the ATEM");
         update();
         stopFlashKeys();
+
+        console.log(atem.state.cameras[parseInt(selectedCamera) + 1]);
     });
     atem.on("disconnected", function() {
         console.log("Disconnected from the ATEM");
@@ -113,7 +118,6 @@ function connect() {
     });
     atem.on('stateChanged', (state, pathToChange) => {
         update();
-        console.log(pathToChange);
     });
 
     //Connect
@@ -149,24 +153,71 @@ function setScreenText(bank, color, value) {
     midiOutput.port.sendMessage(Array.prototype.slice.call(buffer, 0));
 }
 
-function handleButtons(rawButton) {
+function handleButtons(rawButton, value) {
+    //Top buttons
     for(var i = 0; i < buttons.length; i++) {
-        switch(rawButton) {
-            case buttons[i][0]: {
-                setButtonBacklight(i, 0, true);
-                break;
+        if(rawButton == buttons[i][3]) {
+            atem.setAuxSource(i + 1, ccuAux);
+            break;
+        }
+    }
+
+    //Knob buttons
+    var rgby = atem.state.cameras[selectedCamera].liftRGBY;
+    for(var i = 0; i < knobButtons.length; i++) {
+        if(rawButton == knobButtons[i]) {
+            //Reset the features when clicked to 0
+            switch(i) {
+                case 0: {rgby[3] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
+                case 1: {rgby[0] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
+                case 2: {rgby[1] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
+                case 3: {rgby[2] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
             }
-            case buttons[i][1]: {
-                setButtonBacklight(i, 1, true);
-                break;
+        }
+    }
+}
+
+function handleFaders(fader, value) {
+    for(var i in faders) {
+        if(fader == faders[i]) {
+            atem.setCameraIris(parseInt(i) + 1, (value / 127));
+        }
+    }
+}
+
+function handleKnobs(knob, value) {
+    for(var i in knobs) {
+        if(knob == knobs[i]) {
+            var set = false;
+            var rgby = atem.state.cameras[selectedCamera].liftRGBY;
+        
+            switch(parseInt(i)) {
+                case 0: {
+                    set = true;
+                    if(value == 1) { rgby[3] -= 0.01;} else {rgby[3] += 0.01;}
+                    break;
+                }
+                case 1: {
+                    set = true;
+                    if(value == 1) { rgby[0] -= 0.01;} else {rgby[0] += 0.01;}
+                    break;  
+                }
+                case 2: {
+                    set = true;
+                    if(value == 1) { rgby[1] -= 0.01;} else {rgby[1] += 0.01;}
+                    break;  
+                }
+                case 3: {
+                    set = true;
+                    if(value == 1) { rgby[2] -= 0.01;} else {rgby[2] += 0.01;}
+                    break;
+                }
             }
-            case buttons[i][2]: {
-                setButtonBacklight(i, 2, true);
-                break;
-            }
-            case buttons[i][3]: {
-                setButtonBacklight(i, 3, true);
-                break;
+
+            //Ok set it
+            if(value == 1 || value == 65) {
+                //atem.setCameraHueSat(selectedCamera, 0.5, 0.5);
+                atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]);
             }
         }
     }
@@ -174,15 +225,40 @@ function handleButtons(rawButton) {
 
 //Update the status of the device
 function update() {
-    //console.log(atem.state);
+    //Update the iris fader
+    for(var fader in faders) {
+        if(atem.state.cameras[parseInt(fader) + 1] !== undefined) {
+            setFader(fader, atem.state.cameras[parseInt(fader) + 1].iris * 127);
+        }
+        else {
+            setFader(fader, 0);
+        }
+    }
 
+    //Set the selected camera
+    selectedCamera = parseInt(atem.state.video.auxilliaries[ccuAux]);
+    for(var j = 0; j < buttons.length; j++) {
+        if(selectedCamera - 1 == j) {
+            setButtonBacklight(j, 3, true);
+        }
+        else {
+            setButtonBacklight(j, 3, false);
+        }
+    }
+    for(var j = 0; j < buttons.length; j++) {
+        if(atem.state.video.mixEffects[me].programInput - 1 == j) {
+            setButtonBacklight(j, 0, true);
+        }
+        else {
+            setButtonBacklight(j, 0, false);
+        }
+    }
 
-
-
-
-
-
-
+    //Set the knob indiction according to the selected camera
+    setKnobPosition((selectedCamera - 1) + 0, (atem.state.cameras[selectedCamera].liftRGBY[3] + 1.0) * 63.5);
+    setKnobPosition((selectedCamera - 1) + 1, (atem.state.cameras[selectedCamera].liftRGBY[0] + 1.0) * 63.5);
+    setKnobPosition((selectedCamera - 1) + 2, (atem.state.cameras[selectedCamera].liftRGBY[1] + 1.0) * 63.5);
+    setKnobPosition((selectedCamera - 1) + 3, (atem.state.cameras[selectedCamera].liftRGBY[2] + 1.0) * 63.5);
 }
 
 //Main loop
@@ -251,30 +327,16 @@ loadConfig(function(success) {
                 case 144: {
                     if(message[2] == 127) {
                         handleButtons(message[1]);
-
                     }
                     break;
                 }
                 //Fader, Knob
                 case 176: {
-                    console.log("FADER " + message[1]);
+                    handleFaders(message[1], message[2]);
+                    handleKnobs(message[1], message[2]);
                     break;
                 }
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         });
     }
     else {

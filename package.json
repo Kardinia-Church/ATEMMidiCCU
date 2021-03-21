@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/Kardinia-Church/ATEMMidiCCU#readme",
   "dependencies": {
-    "atem-connection": "2.1.0",
+    "atem-connection": "~1.0.0",
     "midi": "1.0.0",
     "nconf": "0.11.2"
   }
