@@ -163,61 +163,37 @@ function handleButtons(rawButton, value) {
     }
 
     //Knob buttons
-    var rgby = atem.state.cameras[selectedCamera].liftRGBY;
     for(var i = 0; i < knobButtons.length; i++) {
         if(rawButton == knobButtons[i]) {
             //Reset the features when clicked to 0
-            switch(i) {
-                case 0: {rgby[3] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
-                case 1: {rgby[0] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
-                case 2: {rgby[1] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
-                case 3: {rgby[2] = 0; atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]); break;}
-            }
+            var rgby = atem.state.cameras[i + 1].liftRGBY;
+            atem.setAuxSource(i + 1, ccuAux);
+            atem.setCameraLiftRGBY(i + 1, rgby[0], rgby[1], rgby[2], 0);
         }
     }
 }
 
 function handleFaders(fader, value) {
-    for(var i in faders) {
+    for(var i = 0; i < faders.length; i++) {
         if(fader == faders[i]) {
-            atem.setCameraIris(parseInt(i) + 1, (value / 127));
+            atem.setAuxSource(i + 1, ccuAux);
+            atem.setCameraIris(i + 1, (value / 127));
         }
     }
 }
 
 function handleKnobs(knob, value) {
-    for(var i in knobs) {
+    for(var i = 0; i < knobs.length; i++) {
         if(knob == knobs[i]) {
+            //At the moment we only set the lift to all 8 faders where fader number = camera number
             var set = false;
-            var rgby = atem.state.cameras[selectedCamera].liftRGBY;
-        
-            switch(parseInt(i)) {
-                case 0: {
-                    set = true;
-                    if(value == 1) { rgby[3] -= 0.01;} else {rgby[3] += 0.01;}
-                    break;
-                }
-                case 1: {
-                    set = true;
-                    if(value == 1) { rgby[0] -= 0.01;} else {rgby[0] += 0.01;}
-                    break;  
-                }
-                case 2: {
-                    set = true;
-                    if(value == 1) { rgby[1] -= 0.01;} else {rgby[1] += 0.01;}
-                    break;  
-                }
-                case 3: {
-                    set = true;
-                    if(value == 1) { rgby[2] -= 0.01;} else {rgby[2] += 0.01;}
-                    break;
-                }
-            }
+            var rgby = atem.state.cameras[i + 1].liftRGBY;
+            if(value == 1) { rgby[3] -= 0.01;} else {rgby[3] += 0.01;}
 
             //Ok set it
             if(value == 1 || value == 65) {
-                //atem.setCameraHueSat(selectedCamera, 0.5, 0.5);
-                atem.setCameraLiftRGBY(selectedCamera, rgby[0], rgby[1], rgby[2], rgby[3]);
+                atem.setAuxSource(i + 1, ccuAux);
+                atem.setCameraLiftRGBY(i + 1, rgby[0], rgby[1], rgby[2], rgby[3]);
             }
         }
     }
