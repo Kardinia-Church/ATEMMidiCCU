@@ -47,7 +47,6 @@ function flashKeys() {
 function stopFlashKeys() {
     clearInterval(keyFlasher[0]);
     keyFlasher[1] = false;
-    update();
 }
 
 //Attempt to load in the configuration
@@ -97,6 +96,8 @@ function loadConfig(callback) {
 
 //Connect to the ATEM
 function connect() {
+    var self = this;
+
     //Set the handlers
     atem.on("info", function(message) {
         console.log("INFO: " + message);
@@ -110,14 +111,15 @@ function connect() {
         update();
         stopFlashKeys();
 
-        console.log(atem.state.cameras[parseInt(selectedCamera) + 1]);
+        atem.on('stateChanged', (state, pathToChange) => {
+            update();
+        });      
+
+        console.log(atem.state.cameras);
     });
     atem.on("disconnected", function() {
         console.log("Disconnected from the ATEM");
         flashKeys();
-    });
-    atem.on('stateChanged', (state, pathToChange) => {
-        update();
     });
 
     //Connect
@@ -316,7 +318,6 @@ loadConfig(function(success) {
         });
     }
     else {
-        console.error("Initialization errors occurred, will retry in 15 seconds");
-        setTimeout(function(){main();}, 15000);
+        console.error("Initialization errors occurred, cannot continue");
     }
 });
